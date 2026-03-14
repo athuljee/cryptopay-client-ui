@@ -22,15 +22,23 @@ class _SendCryptoScreenState extends State<SendCryptoScreen> {
 
   Future<void> sendCrypto() async {
 
+    final amount = double.tryParse(amountController.text);
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Amount must be greater than zero.")),
+      );
+      return;
+    }
+
     setState(() => loading = true);
 
     final response = await http.post(
       Uri.parse("${ServerConfig.baseUrl}/transaction"),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
+        body: jsonEncode({
         "sender": BlockchainService.clientAddress,
         "receiver": receiverController.text,
-        "amount": double.parse(amountController.text),
+        "amount": amount,
         "token": token
       }),
     );

@@ -19,7 +19,7 @@ class _QRScanPageState extends State<QRScanPage> {
     _busy = true;
 
     try {
-      /// JSON QR
+      /// JSON QR (supports offline: localIp, port)
       if (raw.startsWith('{')) {
         final data = jsonDecode(raw);
 
@@ -31,13 +31,18 @@ class _QRScanPageState extends State<QRScanPage> {
           amount = (data['amount'] as num).toDouble();
         }
 
+        final localIp = data['localIp'] as String?;
+        final port = data['port'] != null ? (data['port'] as num).toInt() : null;
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => PaymentPreview(
               crypto: crypto,
               amount: amount,
-              address: merchant, // merchant becomes receiver
+              address: merchant,
+              localIp: localIp,
+              localPort: port,
             ),
           ),
         );

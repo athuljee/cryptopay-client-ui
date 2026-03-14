@@ -9,19 +9,16 @@ import 'screens/transaction_history.dart';
 import 'screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-
 // Services
-
+import 'services/offline_sync_service.dart';
 
 Future<void> main() async {
-  /// REQUIRED for async + SharedPreferences
   WidgetsFlutterBinding.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
   final user = prefs.getString("user");
 
-  /// Initialize demo balances ONCE
-  //await LocalStorage.initDemoBalance();
+  OfflineSyncService.startListening();
 
   runApp(ClientPayApp(startLoggedIn: user != null));
 }

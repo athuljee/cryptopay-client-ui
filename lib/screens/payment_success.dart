@@ -8,12 +8,14 @@ class PaymentSuccess extends StatefulWidget {
   final String merchant;
   final double amount;
   final String token;
+  final bool offline;
 
   const PaymentSuccess({
     super.key,
     required this.merchant,
     required this.amount,
     required this.token,
+    this.offline = false,
   });
 
   @override
@@ -25,13 +27,20 @@ class _PaymentSuccessState extends State<PaymentSuccess> {
   @override
   void initState() {
     super.initState();
-    notifyMerchant();
+    if (!widget.offline) notifyMerchant();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          "/home",
+          (_) => false,
+        );
+      }
+    });
   }
 
   Future<void> notifyMerchant() async {
-
     try {
-
       await http.post(
         Uri.parse("${ServerConfig.baseUrl}/notify-payment"),
         headers: {"Content-Type": "application/json"},
@@ -41,21 +50,9 @@ class _PaymentSuccessState extends State<PaymentSuccess> {
           "token": widget.token
         }),
       );
-
     } catch (e) {
       print("Notification error: $e");
     }
-
-    Future.delayed(const Duration(seconds: 2), () {
-
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        "/home",
-            (_) => false,
-      );
-
-    });
-
   }
 
   @override
