@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'payment_success.dart';
 import '../services/blockchain_service.dart';
 import '../services/local_storage.dart';
+import '../services/network_availability_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:connectivity_plus/connectivity_plus.dart';
 
 class PaymentPreview extends StatelessWidget {
   final String crypto;
@@ -30,11 +30,7 @@ class PaymentPreview extends StatelessWidget {
   }
 
   Future<void> _confirmPayment(BuildContext context) async {
-    final results = await Connectivity().checkConnectivity();
-    final online = results.any((r) =>
-        r == ConnectivityResult.wifi ||
-        r == ConnectivityResult.mobile ||
-        r == ConnectivityResult.ethernet);
+    final online = await NetworkAvailabilityService.hasInternet();
 
     if (online) {
       final success = await BlockchainService.sendTransaction(

@@ -4,20 +4,20 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
 import '../config/server_config.dart';
 import 'local_storage.dart';
+import 'network_availability_service.dart';
 
-/// Syncs pending offline transactions to the blockchain when back online.
+/// Syncs pending offline transactions to the blockchain when internet (backend) is reachable.
 class OfflineSyncService {
   static StreamSubscription<List<ConnectivityResult>>? _subscription;
   static bool _isSyncing = false;
 
   static void startListening() {
     _subscription?.cancel();
-    _subscription = Connectivity().onConnectivityChanged.listen((results) {
-      if (results.any((r) => r != ConnectivityResult.none)) {
+    _subscription = Connectivity().onConnectivityChanged.listen((_) async {
+      if (await NetworkAvailabilityService.hasInternet()) {
         syncPendingTransactions();
       }
     });
-    // Also try sync once on start in case we're already online
     syncPendingTransactions();
   }
 
@@ -31,11 +31,7 @@ class OfflineSyncService {
     final pending = await LocalStorage.getPendingOfflineTxs();
     if (pending.isEmpty) return;
 
-    final results = await Connectivity().checkConnectivity();
-    if (results.any((r) => r == ConnectivityResult.none) &&
-        !results.any((r) => r == ConnectivityResult.wifi || r == ConnectivityResult.mobile)) {
-      return;
-    }
+    if (!await NetworkAvailabilityService.hasInternet()) return;
 
     _isSyncing = true;
     try {

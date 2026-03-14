@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 // Screens
@@ -18,7 +19,11 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final user = prefs.getString("user");
 
-  OfflineSyncService.startListening();
+  try {
+    OfflineSyncService.startListening();
+  } catch (e, st) {
+    debugPrint("OfflineSyncService.startListening: $e $st");
+  }
 
   runApp(ClientPayApp(startLoggedIn: user != null));
 }
