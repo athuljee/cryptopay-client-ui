@@ -52,7 +52,9 @@ class LocalMerchantDiscoveryService {
       if (await _isMerchantAt(hintedIp, port)) return hintedIp;
     }
     final localIp = await _getLocalIp();
-    if (localIp == null) return null;
+    if (localIp == null) {
+      return _scanCommonHotspotRanges(port);
+    }
 
     final parts = localIp.split(".");
     if (parts.length != 4) return null;
@@ -98,6 +100,32 @@ class LocalMerchantDiscoveryService {
       );
       for (final hit in results) {
         if (hit != null) return hit;
+      }
+    }
+    return _scanCommonHotspotRanges(port);
+  }
+
+  static Future<String?> _scanCommonHotspotRanges(int port) async {
+    // Fallback when local interface IP is unavailable (some hotspot providers/hardware).
+    const subnets = <String>[
+      "192.168.43",
+      "192.168.137",
+      "192.168.1",
+      "192.168.0",
+    ];
+    for (final subnet in subnets) {
+      final priority = <String>[
+        "$subnet.1",
+        "$subnet.2",
+        "$subnet.10",
+        "$subnet.100",
+      ];
+      for (final ip in priority) {
+        if (await _isMerchantAt(ip, port)) return ip;
+      }
+      for (int i = 3; i <= 80; i++) {
+        final ip = "$subnet.$i";
+        if (await _isMerchantAt(ip, port)) return ip;
       }
     }
     return null;
