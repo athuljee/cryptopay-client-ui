@@ -9,6 +9,7 @@ import 'screens/qr_scan_page.dart';
 import 'screens/transaction_history.dart';
 import 'screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'services/hotspot_listener_service_io.dart' if (dart.library.html) 'services/hotspot_listener_service_stub.dart';
 
 // Services
 import 'services/offline_sync_service.dart';
@@ -23,6 +24,11 @@ Future<void> main() async {
     OfflineSyncService.startListening();
   } catch (e, st) {
     debugPrint("OfflineSyncService.startListening: $e $st");
+  }
+  try {
+    await HotspotListenerService.start();
+  } catch (e, st) {
+    debugPrint("HotspotListenerService.start: $e $st");
   }
 
   runApp(ClientPayApp(startLoggedIn: user != null));
