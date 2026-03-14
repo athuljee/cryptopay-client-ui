@@ -4,6 +4,7 @@ import 'payment_success.dart';
 import '../services/blockchain_service.dart';
 import '../services/local_storage.dart';
 import '../services/network_availability_service.dart';
+import '../services/local_merchant_discovery_service_io.dart' if (dart.library.html) '../services/local_merchant_discovery_service_stub.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -62,8 +63,16 @@ class PaymentPreview extends StatelessWidget {
       return;
     }
 
-    // Offline: send to merchant local URL if available
-    if (localIp != null && localPort != null && localIp!.isNotEmpty) {
+    // Offline: send to merchant local URL. If QR has no localIp, auto-discover merchant on same hotspot.
+    final int targetPort = localPort ?? 8765;
+    String? targetIp = localIp;
+    if (targetIp == null || targetIp.isEmpty) {
+      targetIp = await LocalMerchantDiscoveryService.discoverMerchantIp(
+        port: targetPort,
+        hintedIp: localIp,
+      );
+    }
+    if (targetIp != null && targetIp.isNotEmpty) {
       final txId = _generateTxId();
       final payload = {
         OfflineTxKeys.txId: txId,
@@ -76,7 +85,7 @@ class PaymentPreview extends StatelessWidget {
       };
       try {
         final res = await http.post(
-          Uri.parse("http://$localIp:$localPort/receive-payment"),
+          Uri.parse("http://$targetIp:$targetPort/receive-payment"),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode(payload),
         ).timeout(const Duration(seconds: 10));
