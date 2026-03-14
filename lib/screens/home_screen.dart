@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/blockchain_service.dart';
+import '../services/hotspot_listener_service_io.dart' if (dart.library.html) '../services/hotspot_listener_service_stub.dart';
 import 'send_crypto_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,6 +16,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int currentIndex = 0;
   bool isDark = true; // local theme toggle
+  bool _hotspotListenerReady = false;
+  bool _merchantConnected = false;
+  List<ConnectivityResult> _connectivity = [ConnectivityResult.none];
 
   final List<Map<String, dynamic>> cryptos = [
     {
@@ -42,6 +48,43 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     loadBalances();
+    _startHotspotListener();
+    HotspotListenerService.onMerchantConnected = () {
+      if (mounted) setState(() => _merchantConnected = true);
+    };
+    Connectivity().checkConnectivity().then((r) {
+      if (mounted) setState(() => _connectivity = r);
+    });
+    Connectivity().onConnectivityChanged.listen((r) {
+      if (mounted) setState(() => _connectivity = r);
+    });
+  }
+
+  Future<void> _startHotspotListener() async {
+    if (!await HotspotListenerService.start()) return;
+    if (mounted) setState(() => _hotspotListenerReady = true);
+  }
+
+  @override
+  void dispose() {
+    HotspotListenerService.onMerchantConnected = null;
+    super.dispose();
+  }
+
+  Future<void> _openHotspotSettings() async {
+    final uri = Uri.parse('content://settings/wifi');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Open Settings → Network → Hotspot to turn on mobile hotspot.'),
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -195,7 +238,64 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              /// OFFLINE / HOTSPOT CARD
+              Card(
+                color: isDark ? Colors.grey[850] : Colors.blue[50],
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _merchantConnected ? Icons.wifi_tethering : Icons.wifi_tethering_rounded,
+                            color: _merchantConnected ? Colors.green : Colors.orange,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Offline payments (hotspot)',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? null : Colors.blue[900],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _merchantConnected
+                            ? 'Merchant connected to hotspot. Ready for offline transactions.'
+                            : 'Turn on your mobile hotspot. Ask merchant to connect to it, then scan their QR.',
+                        style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.blue[800]),
+                      ),
+                      if (_merchantConnected)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Row(
+                            children: [
+                              Icon(Icons.check_circle, size: 16, color: Colors.green[700]),
+                              const SizedBox(width: 4),
+                              Text('Ready for offline transactions', style: TextStyle(fontSize: 12, color: Colors.green[700], fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: _openHotspotSettings,
+                        icon: const Icon(Icons.settings, size: 18),
+                        label: const Text('Open hotspot settings'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
 
               /// ASSETS TITLE
               const Align(
