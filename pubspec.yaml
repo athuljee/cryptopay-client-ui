@@ -1,0 +1,45 @@
+name: cryptopay_client
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  mobile_scanner: ^5.0.0
+  local_auth: ^2.1.4
+  fl_chart: ^0.69.0
+  shared_preferences: ^2.2.2
+  connectivity_plus: ^6.0.3
+  http: ^1.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+  # ✅ APP ICON PACKAGE
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+
+  # ✅ ASSETS
+  assets:
+    - assets/icons/
+    - assets/icon/app_icon.png
+
+# ✅ APP ICON CONFIGURATION
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+  min_sdk_android: 21
