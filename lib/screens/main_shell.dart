@@ -48,8 +48,8 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     return Theme(
       data: _isDark
-          ? ThemeData.dark(useMaterial3: true, colorSchemeSeed: Colors.teal)
-          : ThemeData.light(useMaterial3: true, colorSchemeSeed: Colors.teal),
+          ? ThemeData.dark(useMaterial3: true)
+          : ThemeData.light(useMaterial3: true),
       child: Scaffold(
         body: PageView(
           controller: _pageController,
