@@ -4,6 +4,7 @@ import 'payment_success.dart';
 import '../services/blockchain_service.dart';
 import '../services/local_storage.dart';
 import '../services/network_availability_service.dart';
+import '../services/offline_server_service.dart';
 import '../services/local_merchant_discovery_service_io.dart' if (dart.library.html) '../services/local_merchant_discovery_service_stub.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -63,7 +64,50 @@ class PaymentPreview extends StatelessWidget {
       return;
     }
 
-    // Offline: send to merchant local URL. If QR has no localIp, auto-discover merchant on same hotspot.
+    // Offline local-network mode: prefer offline server (port 3001), then legacy merchant local endpoint.
+    final String? offlineServerIp = localIp;
+    try {
+      final result = await OfflineServerService.sendOfflineTransfer(
+        fromUserId: BlockchainService.clientAddress,
+        toUserId: address,
+        merchantId: address,
+        token: crypto,
+        amount: amount,
+        merchantIpOverride: offlineServerIp,
+      );
+      final txId = result["txId"] as String? ?? _generateTxId();
+      final payload = {
+        OfflineTxKeys.txId: txId,
+        OfflineTxKeys.from: BlockchainService.clientAddress,
+        OfflineTxKeys.to: address,
+        OfflineTxKeys.amount: amount,
+        OfflineTxKeys.token: crypto,
+        OfflineTxKeys.timestamp: DateTime.now().toIso8601String(),
+        OfflineTxKeys.status: "pending",
+      };
+      await LocalStorage.addPendingOfflineTx(payload);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Offline payment recorded. Will sync when online.")),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PaymentSuccess(
+              merchant: address,
+              amount: amount,
+              token: crypto,
+              offline: true,
+            ),
+          ),
+        );
+      }
+      return;
+    } catch (_) {
+      // Fallback to legacy local merchant endpoint for compatibility.
+    }
+
+    // Legacy fallback: send to merchant local URL. If QR has no localIp, auto-discover merchant on same hotspot.
     final int targetPort = localPort ?? 8765;
     String? targetIp = localIp;
     if (targetIp == null || targetIp.isEmpty) {
