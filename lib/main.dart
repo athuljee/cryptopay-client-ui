@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 
 // Screens
 import 'screens/auth_gate.dart';
+import 'screens/main_shell.dart';
 import 'screens/home_screen.dart';
 import 'screens/trending_page.dart';
 import 'screens/qr_scan_page.dart';
 import 'screens/transaction_history.dart';
+import 'screens/offline_wallet_screen.dart';
 import 'screens/login_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'services/hotspot_listener_service_io.dart' if (dart.library.html) 'services/hotspot_listener_service_stub.dart';
@@ -55,13 +57,14 @@ class ClientPayApp extends StatelessWidget {
       /// First screen → biometric gate
       home: const AuthGate(),
 
-      /// Named routes
+      /// Named routes (main app uses MainShell with 4 tabs: Home, Trending, Transactions, Offline Wallet)
       routes: {
         '/login': (_) => const LoginScreen(),
-        '/home': (_) => const HomeScreen(),
+        '/home': (_) => const MainShell(),
         '/trending': (_) => const TrendingPage(),
         '/scan': (_) => const QRScanPage(),
         '/history': (_) => const TransactionHistory(),
+        '/offline-wallet': (_) => const OfflineWalletScreen(),
       },
     );
   }

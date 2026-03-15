@@ -11,7 +11,19 @@ import 'send_crypto_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  /// When true, used inside MainShell: no bottom nav, theme from parent.
+  final bool embedded;
+  /// When embedded, theme is controlled by shell; this is the current value.
+  final bool? isDark;
+  /// When embedded, theme toggle notifies the shell.
+  final ValueChanged<bool>? onThemeChanged;
+
+  const HomeScreen({
+    super.key,
+    this.embedded = false,
+    this.isDark,
+    this.onThemeChanged,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -162,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: isDark ? Colors.grey.shade300 : Colors.amber.shade900,
+            color: _effectiveIsDark ? Colors.grey.shade300 : Colors.amber.shade900,
           ),
         ),
         Text(
@@ -170,7 +182,7 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.amber.shade200 : Colors.amber.shade900,
+            color: _effectiveIsDark ? Colors.amber.shade200 : Colors.amber.shade900,
           ),
         ),
       ],
@@ -191,20 +203,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return total;
   }
 
+  bool get _effectiveIsDark => widget.embedded ? (widget.isDark ?? isDark) : isDark;
+
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: isDark ? ThemeData.dark() : ThemeData.light(),
-      child: Scaffold(
+    final effectiveIsDark = _effectiveIsDark;
+    final content = Scaffold(
         appBar: AppBar(
           title: const Text("Main Wallet"),
           actions: [
 
             /// Theme toggle
             IconButton(
-              icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
+              icon: Icon(effectiveIsDark ? Icons.light_mode : Icons.dark_mode),
               onPressed: () {
-                setState(() => isDark = !isDark);
+                if (widget.embedded && widget.onThemeChanged != null) {
+                  widget.onThemeChanged!(!effectiveIsDark);
+                } else {
+                  setState(() => isDark = !isDark);
+                }
               },
             ),
 
@@ -278,10 +295,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[800] : Colors.amber[50],
+                  color: _effectiveIsDark ? Colors.grey[800] : Colors.amber[50],
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? Colors.amber.shade700 : Colors.amber.shade200,
+                    color: _effectiveIsDark ? Colors.amber.shade700 : Colors.amber.shade200,
                     width: 1,
                   ),
                 ),
@@ -292,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Icon(
                           Icons.phone_android,
-                          color: isDark ? Colors.amber : Colors.amber.shade800,
+                          color: _effectiveIsDark ? Colors.amber : Colors.amber.shade800,
                           size: 22,
                         ),
                         const SizedBox(width: 8),
@@ -301,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? null : Colors.amber.shade900,
+                            color: _effectiveIsDark ? null : Colors.amber.shade900,
                           ),
                         ),
                       ],
@@ -311,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       "Balance transferred for offline use. Deducted from main wallet when loaded.",
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.grey.shade400 : Colors.amber.shade800,
+                        color: _effectiveIsDark ? Colors.grey.shade400 : Colors.amber.shade800,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -323,14 +340,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Icon(Icons.check_circle, size: 14, color: isDark ? Colors.green.shade400 : Colors.green.shade700),
+                        Icon(Icons.check_circle, size: 14, color: _effectiveIsDark ? Colors.green.shade400 : Colors.green.shade700),
                         const SizedBox(width: 6),
                         Text(
                           "Status: Available for Offline Payments",
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.green.shade400 : Colors.green.shade700,
+                            color: _effectiveIsDark ? Colors.green.shade400 : Colors.green.shade700,
                           ),
                         ),
                       ],
@@ -341,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.grey.shade400 : Colors.amber.shade800,
+                        color: _effectiveIsDark ? Colors.grey.shade400 : Colors.amber.shade800,
                       ),
                     ),
                   ],
@@ -401,7 +418,7 @@ class _HomeScreenState extends State<HomeScreen> {
               /// Load to offline wallet (when online)
               if (_hasInternet) ...[
                 Card(
-                  color: isDark ? Colors.grey[850] : Colors.green[50],
+                  color: _effectiveIsDark ? Colors.grey[850] : Colors.green[50],
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Column(
@@ -416,7 +433,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? null : Colors.green[900],
+                                color: _effectiveIsDark ? null : Colors.green[900],
                               ),
                             ),
                           ],
@@ -424,7 +441,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         const SizedBox(height: 6),
                         Text(
                           'Internal transfer: amount is deducted from your main wallet and stored in your Offline Wallet for offline payments only.',
-                          style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.green[800]),
+                          style: TextStyle(fontSize: 12, color: _effectiveIsDark ? Colors.grey[400] : Colors.green[800]),
                         ),
                         const SizedBox(height: 8),
                         SizedBox(
@@ -453,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               /// OFFLINE / HOTSPOT CARD
               Card(
-                color: isDark ? Colors.grey[850] : Colors.blue[50],
+                color: _effectiveIsDark ? Colors.grey[850] : Colors.blue[50],
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Column(
@@ -472,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? null : Colors.blue[900],
+                              color: _effectiveIsDark ? null : Colors.blue[900],
                             ),
                           ),
                         ],
@@ -482,7 +499,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         _merchantConnected
                             ? 'Merchant connected to hotspot. Ready for offline transactions.'
                             : 'Turn on your mobile hotspot. Ask merchant to connect to it, then scan their QR.',
-                        style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.blue[800]),
+                        style: TextStyle(fontSize: 12, color: _effectiveIsDark ? Colors.grey[400] : Colors.blue[800]),
                       ),
                       if (_merchantConnected)
                         Padding(
@@ -555,22 +572,29 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
 
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: currentIndex,
-          selectedItemColor: const Color(0xFF5CFFB0),
-          unselectedItemColor: Colors.grey,
-          onTap: (index) {
-            setState(() => currentIndex = index);
-            if (index == 1) Navigator.pushNamed(context, '/trending');
-            if (index == 2) Navigator.pushNamed(context, '/history');
-          },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(icon: Icon(Icons.trending_up), label: "Trending"),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-          ],
-        ),
+        bottomNavigationBar: widget.embedded
+            ? null
+            : BottomNavigationBar(
+                currentIndex: currentIndex,
+                selectedItemColor: const Color(0xFF5CFFB0),
+                unselectedItemColor: Colors.grey,
+                onTap: (index) {
+                  setState(() => currentIndex = index);
+                  if (index == 1) Navigator.pushNamed(context, '/trending');
+                  if (index == 2) Navigator.pushNamed(context, '/history');
+                },
+                items: const [
+                  BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+                  BottomNavigationBarItem(icon: Icon(Icons.trending_up), label: "Trending"),
+                  BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+                ],
+              ),
       ),
+    );
+    if (widget.embedded) return content;
+    return Theme(
+      data: isDark ? ThemeData.dark(useMaterial3: true) : ThemeData.light(useMaterial3: true),
+      child: content,
     );
   }
 }
