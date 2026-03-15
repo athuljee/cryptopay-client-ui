@@ -19,28 +19,31 @@ class _QRScanPageState extends State<QRScanPage> {
     _busy = true;
 
     try {
-      /// JSON QR (supports offline: localIp, port)
+      /// JSON QR from merchant terminal (merchant, crypto, amount; optional localIp, port for offline)
       if (raw.startsWith('{')) {
-        final data = jsonDecode(raw);
+        final data = jsonDecode(raw) as Map<String, dynamic>?;
+        if (data == null) throw Exception("Invalid QR");
 
-        final crypto = data['crypto'] ?? "";
-        final merchant = data['merchant'] ?? "";
+        final crypto = (data['crypto'] ?? data['token'] ?? "").toString();
+        final merchant = (data['merchant'] ?? data['address'] ?? "").toString();
 
         double amount = 0;
-        if (data['amount'] != null) {
-          amount = (data['amount'] as num).toDouble();
-        }
+        final amountVal = data['amount'] ?? data['cryptoAmount'];
+        if (amountVal != null) amount = (amountVal as num).toDouble();
 
         final localIp = data['localIp'] as String?;
         final port = data['port'] != null ? (data['port'] as num).toInt() : null;
+
+        final cryptoType = crypto.isNotEmpty ? crypto : "ETH";
 
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => PaymentPreview(
-              crypto: crypto,
+              crypto: cryptoType,
               amount: amount,
               address: merchant,
+              merchantName: merchant.isNotEmpty ? merchant : null,
               localIp: localIp,
               localPort: port,
             ),

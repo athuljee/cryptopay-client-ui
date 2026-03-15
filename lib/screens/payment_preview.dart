@@ -13,6 +13,8 @@ class PaymentPreview extends StatefulWidget {
   final String crypto;
   final String address;
   final double amount;
+  /// Display name for merchant (e.g. from QR); falls back to [address] if null.
+  final String? merchantName;
   final String? localIp;
   final int? localPort;
 
@@ -21,6 +23,7 @@ class PaymentPreview extends StatefulWidget {
     required this.crypto,
     required this.address,
     required this.amount,
+    this.merchantName,
     this.localIp,
     this.localPort,
   });
@@ -43,6 +46,7 @@ class _PaymentPreviewState extends State<PaymentPreview> {
     final online = await NetworkAvailabilityService.hasInternet();
 
     if (online) {
+      if (context.mounted) setState(() => _isProcessing = true);
       final success = await BlockchainService.sendTransaction(
         widget.address,
         widget.amount,
@@ -50,6 +54,7 @@ class _PaymentPreviewState extends State<PaymentPreview> {
       );
       if (!success) {
         if (context.mounted) {
+          setState(() => _isProcessing = false);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Insufficient balance or invalid amount")),
           );
@@ -202,8 +207,20 @@ class _PaymentPreviewState extends State<PaymentPreview> {
     }
   }
 
+  String get _formattedAmount {
+    final decimals = widget.crypto == "USDT" ? 2 : 6;
+    return "${widget.amount.toStringAsFixed(decimals)} ${widget.crypto}";
+  }
+
+  String get _paymentMode =>
+      (widget.localIp != null && widget.localPort != null) ? "Offline (local)" : "Online";
+
   @override
   Widget build(BuildContext context) {
+    final merchantDisplay = widget.merchantName?.isNotEmpty == true
+        ? widget.merchantName!
+        : (widget.address.isNotEmpty ? widget.address : "—");
+
     return Stack(
       children: [
         Scaffold(
@@ -214,17 +231,35 @@ class _PaymentPreviewState extends State<PaymentPreview> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                _row("Crypto", widget.crypto),
-                _row("Amount", widget.amount.toStringAsFixed(6)),
-                _row("To", widget.address),
-                if (widget.localIp != null && widget.localPort != null)
-                  _row("Mode", "Offline (local)"),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: _isProcessing ? null : () => _confirmPayment(context),
-                  child: const Text("Confirm Payment"),
-                ),
+                  const Text(
+                    "Transaction details",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _row("Merchant", merchantDisplay),
+                          _row("Crypto", widget.crypto),
+                          _row("Amount", _formattedAmount),
+                          _row("Pay to", widget.address),
+                          _row("Payment mode", _paymentMode),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isProcessing ? null : () => _confirmPayment(context),
+                    child: const Text("Confirm Payment"),
+                  ),
                 ],
               ),
             ),
@@ -232,7 +267,7 @@ class _PaymentPreviewState extends State<PaymentPreview> {
         ),
         if (_isProcessing)
           Container(
-            color: Colors.black26,
+            color: Colors.black54,
             child: Center(
               child: Card(
                 margin: const EdgeInsets.all(32),
@@ -242,10 +277,18 @@ class _PaymentPreviewState extends State<PaymentPreview> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const CircularProgressIndicator(),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       Text(
-                        "Sending Payment…",
-                        style: Theme.of(context).textTheme.titleSmall,
+                        "Processing Payment...",
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "Please wait while your transaction is being completed.",
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
