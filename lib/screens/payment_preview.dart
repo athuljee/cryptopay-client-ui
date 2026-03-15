@@ -84,6 +84,10 @@ class PaymentPreview extends StatelessWidget {
         OfflineTxKeys.token: crypto,
         OfflineTxKeys.timestamp: DateTime.now().toIso8601String(),
         OfflineTxKeys.status: "pending",
+        OfflineTxKeys.syncStatus: "pending",
+        OfflineTxKeys.isOfflinePayment: true,
+        OfflineTxKeys.offlineCreatedAt: DateTime.now().toIso8601String(),
+        OfflineTxKeys.offlineReceivedAt: DateTime.now().toIso8601String(),
       };
       await LocalStorage.addPendingOfflineTx(payload);
       if (context.mounted) {
@@ -126,6 +130,10 @@ class PaymentPreview extends StatelessWidget {
         OfflineTxKeys.token: crypto,
         OfflineTxKeys.timestamp: DateTime.now().toIso8601String(),
         OfflineTxKeys.status: "pending",
+        OfflineTxKeys.syncStatus: "pending",
+        OfflineTxKeys.isOfflinePayment: true,
+        OfflineTxKeys.offlineCreatedAt: DateTime.now().toIso8601String(),
+        OfflineTxKeys.offlineReceivedAt: DateTime.now().toIso8601String(),
       };
       try {
         final res = await http.post(

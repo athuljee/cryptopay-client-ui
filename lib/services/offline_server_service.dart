@@ -84,6 +84,7 @@ class OfflineServerService {
       merchantIpOverride: merchantIpOverride,
     );
     final currentNonce = (wallet?["nonce"] as num?)?.toInt() ?? 0;
+    final nowIso = DateTime.now().toIso8601String();
 
     final res = await http
         .post(
@@ -96,6 +97,8 @@ class OfflineServerService {
             "token": token,
             "amount": amount,
             "nonce": currentNonce + 1,
+            "offlineCreatedAt": nowIso,
+            "offlineReceivedAt": nowIso,
           }),
         )
         .timeout(const Duration(seconds: 12));
@@ -104,5 +107,24 @@ class OfflineServerService {
       return data;
     }
     throw Exception(data["error"] ?? "offline_transfer_failed");
+  }
+
+  static Future<List<Map<String, dynamic>>> getOfflineTransactions({
+    String? userId,
+    String? merchantIpOverride,
+  }) async {
+    try {
+      final base = await _resolveLocalBaseUrl(merchantIpOverride: merchantIpOverride);
+      final suffix = userId != null && userId.isNotEmpty ? "?userId=$userId" : "";
+      final res = await http
+          .get(Uri.parse("$base/offline-transactions$suffix"))
+          .timeout(const Duration(seconds: 8));
+      if (res.statusCode != 200) return const [];
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      final list = (data["transactions"] as List?) ?? const [];
+      return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    } catch (_) {
+      return const [];
+    }
   }
 }

@@ -62,6 +62,11 @@ class OfflineSyncService {
             "amount": tx[OfflineTxKeys.amount],
             "token": tx[OfflineTxKeys.token],
             "txId": txId,
+            "is_offline_payment": true,
+            "offline_created_at": tx[OfflineTxKeys.offlineCreatedAt] ?? tx[OfflineTxKeys.timestamp],
+            "offline_received_at": tx[OfflineTxKeys.offlineReceivedAt] ?? tx[OfflineTxKeys.timestamp],
+            "blockchain_synced_at": DateTime.now().toIso8601String(),
+            "sync_status": "synced",
           };
           final postRes = await http.post(
             Uri.parse("${ServerConfig.baseUrl}/transaction"),
