@@ -101,9 +101,10 @@ class _TransactionHistoryState extends State<TransactionHistory> {
     final isOffline = tx["is_offline_payment"] == true;
     if (!isOffline) return "Confirmed";
     final sync = (tx["sync_status"] ?? "pending").toString().toLowerCase();
-    if (sync == "synced") return "Synced (Confirmed)";
-    if (sync == "failed") return "Failed";
-    return "Pending Sync";
+    if (sync == "synced") return "Synced to Blockchain";
+    final status = (tx["status"] ?? "").toString().toLowerCase();
+    if (status == "rejected") return "Failed";
+    return "Pending";
   }
 
   Color _statusColor(Map<String, dynamic> tx) {
@@ -111,7 +112,8 @@ class _TransactionHistoryState extends State<TransactionHistory> {
     if (!isOffline) return const Color(0xFF22C55E);
     final sync = (tx["sync_status"] ?? "pending").toString().toLowerCase();
     if (sync == "synced") return const Color(0xFF3B82F6);
-    if (sync == "failed") return const Color(0xFFEF4444);
+    final status = (tx["status"] ?? "").toString().toLowerCase();
+    if (status == "rejected") return const Color(0xFFEF4444);
     return const Color(0xFFEAB308);
   }
 
@@ -120,7 +122,8 @@ class _TransactionHistoryState extends State<TransactionHistory> {
     if (!isOffline) return Icons.cloud_done;
     final sync = (tx["sync_status"] ?? "pending").toString().toLowerCase();
     if (sync == "synced") return Icons.sync;
-    if (sync == "failed") return Icons.error_outline;
+    final status = (tx["status"] ?? "").toString().toLowerCase();
+    if (status == "rejected") return Icons.error_outline;
     return Icons.schedule;
   }
 
@@ -338,7 +341,7 @@ class _TransactionHistoryState extends State<TransactionHistory> {
                                 runSpacing: 8,
                                 children: [
                                   _legendChip("Online", const Color(0xFF22C55E)),
-                                  _legendChip("Offline Pending", const Color(0xFFEAB308)),
+                                  _legendChip("Pending", const Color(0xFFEAB308)),
                                   _legendChip("Synced", const Color(0xFF3B82F6)),
                                   _legendChip("Failed", const Color(0xFFEF4444)),
                                 ],
