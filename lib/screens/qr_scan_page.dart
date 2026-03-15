@@ -33,6 +33,8 @@ class _QRScanPageState extends State<QRScanPage> {
 
         final localIp = data['localIp'] as String?;
         final port = data['port'] != null ? (data['port'] as num).toInt() : null;
+        final mode = data['mode']?.toString();
+        final isOfflineFlow = port != null || mode == 'offline_server';
 
         final cryptoType = crypto.isNotEmpty ? crypto : "ETH";
 
@@ -46,6 +48,7 @@ class _QRScanPageState extends State<QRScanPage> {
               merchantName: merchant.isNotEmpty ? merchant : null,
               localIp: localIp,
               localPort: port,
+              isOfflineFlow: isOfflineFlow,
             ),
           ),
         );

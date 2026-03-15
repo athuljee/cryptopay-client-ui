@@ -57,34 +57,47 @@ class _PaymentSuccessState extends State<PaymentSuccess> {
 
   @override
   Widget build(BuildContext context) {
-
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-
-            Icon(
+            const Icon(
               Icons.check_circle,
               size: 120,
               color: Colors.green,
             ),
-
-            SizedBox(height: 20),
-
+            const SizedBox(height: 20),
             Text(
-              "Payment Successful",
-              style: TextStyle(
+              widget.offline ? "Payment Sent Successfully" : "Payment Successful",
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
+              textAlign: TextAlign.center,
             ),
-
+            if (widget.offline) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  "Status: Pending Sync",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.amber.shade800,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
-
   }
 }

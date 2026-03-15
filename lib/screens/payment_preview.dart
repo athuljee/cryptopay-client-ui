@@ -17,6 +17,8 @@ class PaymentPreview extends StatefulWidget {
   final String? merchantName;
   final String? localIp;
   final int? localPort;
+  /// True when QR indicates offline flow (e.g. port or mode from merchant).
+  final bool? isOfflineFlow;
 
   const PaymentPreview({
     super.key,
@@ -26,6 +28,7 @@ class PaymentPreview extends StatefulWidget {
     this.merchantName,
     this.localIp,
     this.localPort,
+    this.isOfflineFlow,
   });
 
   @override
@@ -212,8 +215,11 @@ class _PaymentPreviewState extends State<PaymentPreview> {
     return "${widget.amount.toStringAsFixed(decimals)} ${widget.crypto}";
   }
 
-  String get _paymentMode =>
-      (widget.localIp != null && widget.localPort != null) ? "Offline (local)" : "Online";
+  bool get _isOfflineFlow =>
+      widget.isOfflineFlow == true ||
+      (widget.localIp != null && widget.localPort != null);
+
+  String get _paymentMode => _isOfflineFlow ? "Offline" : "Online";
 
   @override
   Widget build(BuildContext context) {
@@ -279,14 +285,18 @@ class _PaymentPreviewState extends State<PaymentPreview> {
                       const CircularProgressIndicator(),
                       const SizedBox(height: 20),
                       Text(
-                        "Processing Payment...",
+                        _isOfflineFlow
+                            ? "Processing Offline Payment..."
+                            : "Processing Payment...",
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        "Please wait while your transaction is being completed.",
+                        _isOfflineFlow
+                            ? "Please wait while the transaction is being sent to the merchant."
+                            : "Please wait while your transaction is being completed.",
                         style: Theme.of(context).textTheme.bodyMedium,
                         textAlign: TextAlign.center,
                       ),
