@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/blockchain_service.dart';
 import '../services/hotspot_listener_service_io.dart' if (dart.library.html) '../services/hotspot_listener_service_stub.dart';
 import '../services/network_availability_service.dart';
-import '../services/offline_server_service.dart';
+import 'load_offline_wallet_screen.dart';
 import 'send_crypto_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -289,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const SendCryptoScreen(initialMode: ClientSendMode.local),
+                                  builder: (_) => const LoadOfflineWalletScreen(),
                                 ),
                               );
                               loadBalances();
