@@ -589,7 +589,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
                 ],
               ),
-      ),
     );
     if (widget.embedded) return content;
     return Theme(
