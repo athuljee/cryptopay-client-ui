@@ -99,9 +99,9 @@ class _TransactionHistoryState extends State<TransactionHistory> {
 
   String _statusLabel(Map<String, dynamic> tx) {
     final isOffline = tx["is_offline_payment"] == true;
-    if (!isOffline) return "Online";
+    if (!isOffline) return "Confirmed";
     final sync = (tx["sync_status"] ?? "pending").toString().toLowerCase();
-    if (sync == "synced") return "Synced to Blockchain • Mined";
+    if (sync == "synced") return "Synced (Confirmed)";
     if (sync == "failed") return "Failed";
     return "Pending Sync";
   }

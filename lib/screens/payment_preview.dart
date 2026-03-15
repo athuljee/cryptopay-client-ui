@@ -238,7 +238,7 @@ class _PaymentPreviewState extends State<PaymentPreview> {
                       const CircularProgressIndicator(),
                       const SizedBox(height: 16),
                       Text(
-                        "Processing offline payment...",
+                        "Sending Payment…",
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                     ],
