@@ -4,8 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/blockchain_service.dart';
 import '../services/hotspot_listener_service_io.dart' if (dart.library.html) '../services/hotspot_listener_service_stub.dart';
 import '../services/network_availability_service.dart';
-import '../services/offline_server_service.dart';
-import '../services/local_storage.dart';
 import 'load_offline_wallet_screen.dart';
 import 'send_crypto_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -62,14 +60,10 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
-  /// Offline balance (transferred when online) – stored locally, shown when offline.
-  Map<String, double> _offlineBalances = {"BTC": 0.0, "ETH": 0.0, "USDT": 0.0};
-
   @override
   void initState() {
     super.initState();
     loadBalances();
-    loadOfflineBalances();
     _startHotspotListener();
     _checkInternet();
     HotspotListenerService.onMerchantConnected = () {
@@ -120,7 +114,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     loadBalances();
-    loadOfflineBalances();
   }
 
   Future<void> loadBalances() async {
@@ -136,57 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       // Offline or error – main balance stays as is; offline balance from cache
     }
-  }
-
-  /// Load offline balance from cache; when online, try to fetch from server and update cache.
-  Future<void> loadOfflineBalances() async {
-    final cached = await LocalStorage.getOfflineBalances();
-    if (mounted) setState(() => _offlineBalances = Map.from(cached));
-
-    if (_hasInternet) {
-      try {
-        final wallet = await OfflineServerService.getOfflineWallet(
-          BlockchainService.clientAddress,
-          merchantIpOverride: null,
-        );
-        if (wallet != null && wallet["balances"] is Map) {
-          final map = (wallet["balances"] as Map<String, dynamic>).map(
-            (k, v) => MapEntry(k, (v is num ? v.toDouble() : 0.0)),
-          );
-          await LocalStorage.setOfflineBalances(map);
-          if (mounted) setState(() => _offlineBalances = map);
-        }
-      } catch (_) {}
-    }
-  }
-
-  double get _offlineTotalBalance {
-    const prices = {"BTC": 52000.0, "ETH": 3400.0, "USDT": 1.0};
-    return _offlineBalances.entries.fold(0.0, (sum, e) => sum + (e.value * (prices[e.key] ?? 0)));
-  }
-
-  Widget _offlineWalletRow(String crypto, double amount, int decimals) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          "Crypto: $crypto",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: _effectiveIsDark ? Colors.grey.shade300 : Colors.amber.shade900,
-          ),
-        ),
-        Text(
-          "Balance: ${amount.toStringAsFixed(decimals)} $crypto",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: _effectiveIsDark ? Colors.amber.shade200 : Colors.amber.shade900,
-          ),
-        ),
-      ],
-    );
   }
 
   double get totalBalance {
@@ -251,7 +193,6 @@ class _HomeScreenState extends State<HomeScreen> {
           onRefresh: () async {
             await _checkInternet();
             await loadBalances();
-            await loadOfflineBalances();
           },
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -289,81 +230,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 20),
               ],
-
-              /// Offline Wallet – separate section; when offline this is the only balance shown.
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: _effectiveIsDark ? Colors.grey[800] : Colors.amber[50],
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _effectiveIsDark ? Colors.amber.shade700 : Colors.amber.shade200,
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.phone_android,
-                          color: _effectiveIsDark ? Colors.amber : Colors.amber.shade800,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "Offline Wallet",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: _effectiveIsDark ? null : Colors.amber.shade900,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Balance transferred for offline use. Deducted from main wallet when loaded.",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _effectiveIsDark ? Colors.grey.shade400 : Colors.amber.shade800,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _offlineWalletRow("BTC", _offlineBalances["BTC"] ?? 0, 6),
-                    const SizedBox(height: 10),
-                    _offlineWalletRow("ETH", _offlineBalances["ETH"] ?? 0, 6),
-                    const SizedBox(height: 10),
-                    _offlineWalletRow("USDT", _offlineBalances["USDT"] ?? 0, 2),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Icon(Icons.check_circle, size: 14, color: _effectiveIsDark ? Colors.green.shade400 : Colors.green.shade700),
-                        const SizedBox(width: 6),
-                        Text(
-                          "Status: Available for Offline Payments",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _effectiveIsDark ? Colors.green.shade400 : Colors.green.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Total (approx.): \$${_offlineTotalBalance.toStringAsFixed(2)}",
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: _effectiveIsDark ? Colors.grey.shade400 : Colors.amber.shade800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
 
               const SizedBox(height: 20),
 
@@ -455,7 +321,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               );
                               loadBalances();
-                              loadOfflineBalances();
                             },
                             icon: const Icon(Icons.download, size: 18),
                             label: const Text('Load to offline wallet'),
@@ -529,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  _hasInternet ? "Your Assets (Main Wallet)" : "Your Assets (Offline)",
+                  "Your Assets (Main Wallet)",
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -546,9 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (context, index) {
                   final c = cryptos[index];
                   final symbol = c["symbol"] as String;
-                  final amount = _hasInternet
-                      ? (c["amount"] as double)
-                      : (_offlineBalances[symbol] ?? 0.0);
+                  final amount = c["amount"] as double;
 
                   return Card(
                     child: ListTile(
@@ -557,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Image.asset(c["icon"], width: 22),
                       ),
                       title: Text(c["name"]),
-                      subtitle: Text(_hasInternet ? "$symbol (main)" : "$symbol (offline)"),
+                      subtitle: Text(symbol),
                       trailing: Text(
                         amount.toStringAsFixed(symbol == "USDT" ? 2 : 6),
                         style: const TextStyle(fontWeight: FontWeight.bold),
