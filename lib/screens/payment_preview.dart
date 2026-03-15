@@ -206,10 +206,13 @@ class _PaymentPreviewState extends State<PaymentPreview> {
       children: [
         Scaffold(
           appBar: AppBar(title: const Text("Payment Preview")),
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
+          body: RefreshIndicator(
+            onRefresh: () async {},
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
                 _row("Crypto", widget.crypto),
                 _row("Amount", widget.amount.toStringAsFixed(6)),
                 _row("To", widget.address),
@@ -220,7 +223,8 @@ class _PaymentPreviewState extends State<PaymentPreview> {
                   onPressed: _isProcessing ? null : () => _confirmPayment(context),
                   child: const Text("Confirm Payment"),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

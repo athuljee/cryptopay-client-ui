@@ -167,10 +167,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
 
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
+        body: RefreshIndicator(
+          onRefresh: loadBalances,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
               /// BALANCE CARD
               Container(
                 width: double.infinity,
@@ -376,32 +379,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 20),
 
-              Expanded(
-                child: ListView.builder(
-                  itemCount: cryptos.length,
-                  itemBuilder: (context, index) {
-                    final c = cryptos[index];
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: cryptos.length,
+                itemBuilder: (context, index) {
+                  final c = cryptos[index];
 
-                    return Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: c["color"],
-                          child: Image.asset(c["icon"], width: 22),
-                        ),
-                        title: Text(c["name"]),
-                        subtitle: Text(c["symbol"]),
-                        trailing: Text(
-                          c["amount"].toStringAsFixed(
-                            c["symbol"] == "USDT" ? 2 : 6,
-                          ),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
+                  return Card(
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: c["color"],
+                        child: Image.asset(c["icon"], width: 22),
                       ),
-                    );
-                  },
-                ),
+                      title: Text(c["name"]),
+                      subtitle: Text(c["symbol"]),
+                      trailing: Text(
+                        c["amount"].toStringAsFixed(
+                          c["symbol"] == "USDT" ? 2 : 6,
+                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  );
+                },
               ),
+              const SizedBox(height: 24),
             ],
+            ),
           ),
         ),
 

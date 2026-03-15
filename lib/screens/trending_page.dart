@@ -98,9 +98,12 @@ class _TrendingPageState extends State<TrendingPage> {
       appBar: AppBar(
         title: const Text("Trending Tokens"),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: coins.length,
+      body: RefreshIndicator(
+        onRefresh: loadTrending,
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          itemCount: coins.length,
         itemBuilder: (context, index) {
           final c = coins[index];
           final isUp = c["change"] >= 0;
@@ -131,6 +134,7 @@ class _TrendingPageState extends State<TrendingPage> {
             ),
           );
         },
+        ),
       ),
     );
   }

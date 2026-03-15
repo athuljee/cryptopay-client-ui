@@ -226,41 +226,8 @@ class _TransactionHistoryState extends State<TransactionHistory> {
       currentUser = prefs.getString("user") ?? BlockchainService.clientAddress;
 
       final merged = <String, Map<String, dynamic>>{};
-      final response = await http.get(
-        Uri.parse("${ServerConfig.baseUrl}/chain"),
-      ).timeout(const Duration(seconds: 10));
 
-      if (response.statusCode == 200) {
-        final chain = jsonDecode(response.body);
-        if (chain is List) {
-          for (var block in chain) {
-            if (block is Map && block["transactions"] is List) {
-              for (var raw in block["transactions"] as List) {
-                if (raw is! Map) continue;
-                final tx = _normalizeOnline(Map<String, dynamic>.from(raw));
-                final txId = tx["tx_id"].toString();
-                final old = merged[txId];
-                if (old == null || _rank(tx) >= _rank(old)) {
-                  merged[txId] = tx;
-                }
-              }
-            }
-          }
-        }
-      }
-
-      final offline = await OfflineServerService.getOfflineTransactions(
-        userId: currentUser,
-      );
-      for (final raw in offline) {
-        final tx = _normalizeOffline(raw);
-        final txId = tx["tx_id"].toString();
-        final old = merged[txId];
-        if (old == null || _rank(tx) >= _rank(old)) {
-          merged[txId] = tx;
-        }
-      }
-
+      // Always merge local pending first so offline transactions appear immediately
       final pending = await LocalStorage.getPendingOfflineTxs();
       for (final raw in pending) {
         final tx = _normalizeOffline(raw);
@@ -270,6 +237,45 @@ class _TransactionHistoryState extends State<TransactionHistory> {
           merged[txId] = tx;
         }
       }
+
+      try {
+        final response = await http.get(
+          Uri.parse("${ServerConfig.baseUrl}/chain"),
+        ).timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 200) {
+          final chain = jsonDecode(response.body);
+          if (chain is List) {
+            for (var block in chain) {
+              if (block is Map && block["transactions"] is List) {
+                for (var raw in block["transactions"] as List) {
+                  if (raw is! Map) continue;
+                  final tx = _normalizeOnline(Map<String, dynamic>.from(raw));
+                  final txId = tx["tx_id"].toString();
+                  final old = merged[txId];
+                  if (old == null || _rank(tx) >= _rank(old)) {
+                    merged[txId] = tx;
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (_) {}
+
+      try {
+        final offline = await OfflineServerService.getOfflineTransactions(
+          userId: currentUser,
+        );
+        for (final raw in offline) {
+          final tx = _normalizeOffline(raw);
+          final txId = tx["tx_id"].toString();
+          final old = merged[txId];
+          if (old == null || _rank(tx) >= _rank(old)) {
+            merged[txId] = tx;
+          }
+        }
+      } catch (_) {}
 
       final txs = merged.values.toList()
         ..sort((a, b) {
