@@ -6,7 +6,10 @@ import '../services/blockchain_service.dart';
 import '../services/offline_server_service.dart';
 
 class SendCryptoScreen extends StatefulWidget {
-  const SendCryptoScreen({super.key});
+  /// When non-null, opens in this mode (e.g. local for "Load to offline wallet" flow).
+  final ClientSendMode? initialMode;
+
+  const SendCryptoScreen({super.key, this.initialMode});
 
   @override
   State<SendCryptoScreen> createState() => _SendCryptoScreenState();
@@ -19,7 +22,7 @@ class _SendCryptoScreenState extends State<SendCryptoScreen> {
   final localIpController = TextEditingController(text: ServerConfig.localOfflineHost);
 
   String token = "ETH";
-  ClientSendMode sendMode = ClientSendMode.online;
+  late ClientSendMode sendMode;
 
   bool loading = false;
   bool loadingWallet = false;
@@ -29,6 +32,7 @@ class _SendCryptoScreenState extends State<SendCryptoScreen> {
   @override
   void initState() {
     super.initState();
+    sendMode = widget.initialMode ?? ClientSendMode.online;
     _refreshOfflineWallet();
   }
 

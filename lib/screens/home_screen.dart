@@ -3,6 +3,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/blockchain_service.dart';
 import '../services/hotspot_listener_service_io.dart' if (dart.library.html) '../services/hotspot_listener_service_stub.dart';
+import '../services/network_availability_service.dart';
+import '../services/offline_server_service.dart';
 import 'send_crypto_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isDark = true; // local theme toggle
   bool _hotspotListenerReady = false;
   bool _merchantConnected = false;
+  bool _hasInternet = false;
   List<ConnectivityResult> _connectivity = [ConnectivityResult.none];
 
   final List<Map<String, dynamic>> cryptos = [
@@ -49,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     loadBalances();
     _startHotspotListener();
+    _checkInternet();
     HotspotListenerService.onMerchantConnected = () {
       if (mounted) setState(() => _merchantConnected = true);
     };
@@ -57,7 +61,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     Connectivity().onConnectivityChanged.listen((r) {
       if (mounted) setState(() => _connectivity = r);
+      _checkInternet();
     });
+  }
+
+  Future<void> _checkInternet() async {
+    final ok = await NetworkAvailabilityService.hasInternet();
+    if (mounted && _hasInternet != ok) setState(() => _hasInternet = ok);
   }
 
   Future<void> _startHotspotListener() async {
@@ -239,6 +249,58 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const SizedBox(height: 16),
+
+              /// Load to offline wallet (when online)
+              if (_hasInternet) ...[
+                Card(
+                  color: isDark ? Colors.grey[850] : Colors.green[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.account_balance_wallet, color: Colors.green[700], size: 22),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Load crypto for offline use',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? null : Colors.green[900],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Transfer from your online wallet to your local offline wallet. Use this balance when paying at merchants without internet.',
+                          style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.green[800]),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const SendCryptoScreen(initialMode: ClientSendMode.local),
+                                ),
+                              );
+                              loadBalances();
+                            },
+                            icon: const Icon(Icons.download, size: 18),
+                            label: const Text('Load to offline wallet'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
 
               /// OFFLINE / HOTSPOT CARD
               Card(

@@ -101,7 +101,7 @@ class _TransactionHistoryState extends State<TransactionHistory> {
     final isOffline = tx["is_offline_payment"] == true;
     if (!isOffline) return "Online";
     final sync = (tx["sync_status"] ?? "pending").toString().toLowerCase();
-    if (sync == "synced") return "Synced to Blockchain";
+    if (sync == "synced") return "Synced to Blockchain • Mined";
     if (sync == "failed") return "Failed";
     return "Pending Sync";
   }
