@@ -101,6 +101,7 @@ class _PaymentPreviewState extends State<PaymentPreview> {
         OfflineTxKeys.offlineReceivedAt: DateTime.now().toIso8601String(),
       };
       await LocalStorage.addPendingOfflineTx(payload);
+      await LocalStorage.deductOfflineBalance(widget.crypto, widget.amount);
       if (context.mounted) {
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -158,6 +159,7 @@ class _PaymentPreviewState extends State<PaymentPreview> {
         if (context.mounted) setState(() => _isProcessing = false);
         if (res.statusCode == 200) {
           await LocalStorage.addPendingOfflineTx(payload);
+          await LocalStorage.deductOfflineBalance(widget.crypto, widget.amount);
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Payment recorded offline. Will sync when online.")),

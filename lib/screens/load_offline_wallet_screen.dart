@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/blockchain_service.dart';
 import '../services/offline_server_service.dart';
+import '../services/local_storage.dart';
 import '../config/server_config.dart';
 
 /// Internal transfer: Main Wallet (Online) → Offline Wallet (same account).
@@ -92,16 +93,24 @@ class _LoadOfflineWalletScreenState extends State<LoadOfflineWalletScreen> {
       if (_merchantIpOverride == null) {
         await _autoDetectMerchant(showMessage: true);
       }
-      await OfflineServerService.loadOfflineWallet(
+      final result = await OfflineServerService.loadOfflineWallet(
         userId: BlockchainService.clientAddress,
         token: _token,
         amount: amount,
         merchantIpOverride: _merchantIpOverride,
       );
+      // Persist new offline balance so home shows it (and it's available when offline)
+      final wallet = result["wallet"] as Map<String, dynamic>?;
+      if (wallet != null && wallet["balances"] is Map) {
+        final balances = (wallet["balances"] as Map<String, dynamic>).map(
+          (k, v) => MapEntry(k, (v is num ? v.toDouble() : 0.0)),
+        );
+        await LocalStorage.setOfflineBalances(balances);
+      }
       await _refreshOfflineWallet();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Transferred to your offline wallet")),
+          const SnackBar(content: Text("Transferred to your offline wallet. Main balance reduced.")),
         );
         _amountController.clear();
       }

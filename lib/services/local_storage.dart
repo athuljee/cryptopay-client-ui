@@ -21,6 +21,7 @@ class LocalStorage {
   static const _balanceKey = "balances";
   static const _historyKey = "history";
   static const _pendingOfflineKey = "pending_offline_txs";
+  static const _offlineBalanceKey = "offline_balances";
 
   /// Demo wallet (large balance for testing)
   //static const Map<String, double> demoBalances = {
@@ -134,5 +135,36 @@ class LocalStorage {
     List list = jsonDecode(raw);
     list.removeWhere((e) => e[OfflineTxKeys.txId] == txId);
     await prefs.setString(_pendingOfflineKey, jsonEncode(list));
+  }
+
+  // ---------- Offline wallet balance (cached for display when offline) ----------
+
+  /// Saved balance that was transferred for offline use. Shown when offline.
+  static Future<Map<String, double>> getOfflineBalances() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_offlineBalanceKey);
+    if (raw == null) return {"BTC": 0.0, "ETH": 0.0, "USDT": 0.0};
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return {
+      "BTC": (decoded["BTC"] as num?)?.toDouble() ?? 0.0,
+      "ETH": (decoded["ETH"] as num?)?.toDouble() ?? 0.0,
+      "USDT": (decoded["USDT"] as num?)?.toDouble() ?? 0.0,
+    };
+  }
+
+  static Future<void> setOfflineBalances(Map<String, double> balances) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_offlineBalanceKey, jsonEncode(balances));
+  }
+
+  /// Call after an offline payment so cached balance reflects the deduction.
+  static Future<void> deductOfflineBalance(String token, double amount) async {
+    final balances = await getOfflineBalances();
+    final key = token.toUpperCase();
+    if (balances.containsKey(key)) {
+      final current = balances[key]!;
+      balances[key] = (current - amount).clamp(0.0, double.infinity);
+      await setOfflineBalances(balances);
+    }
   }
 }
